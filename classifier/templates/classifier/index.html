@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Brain Tumor Detection</title>
+</head>
+<body>
+    <h1>Brain Tumor Detection</h1>
+    <button onclick="trainModel()">Train Model</button>
+    <div id="results"></div>
+    
+    <script>
+        function trainModel() {
+            fetch('/train/')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('results').innerText = "Error: " + data.error;
+                    } else {
+                        document.getElementById('results').innerText = data.status;
+                    }
+                }).catch(error => {
+                    document.getElementById('results').innerText = "Error: " + error;
+                });
+        }
+    </script>
+</body>
+</html>
+

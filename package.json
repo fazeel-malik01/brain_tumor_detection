@@ -1,0 +1,11 @@
+{
+  "name": "brain_tumor_detection",
+  "version": "1.0.0",
+  "description": "brain tumor detection",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "fazeel-malik01",
+  "license": "ISC"
+}
