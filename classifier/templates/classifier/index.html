@@ -1,14 +1,70 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Brain Tumor Detection</title>
-</head>
-<body>
-    <h1>Brain Tumor Detection</h1>
-    <button onclick="trainModel()">Train Model</button>
-    <div id="results"></div>
-    
     <script>
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        const csrftoken = getCookie('csrftoken');
+
+        async function fetchMetrics() {
+            try {
+                const response = await fetch('/show_metrics/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    }
+                });
+                const data = await response.json();
+
+                if (data.status === "Metrics computed successfully") {
+                    const metrics = data.metrics;
+                    localStorage.setItem('accuracy', metrics.Accuracy.toFixed(2));
+                    localStorage.setItem('precision', metrics.Precision.toFixed(2));
+                    localStorage.setItem('recall', metrics.Recall.toFixed(2));
+                    localStorage.setItem('f1_score', metrics['F1 Score'].toFixed(2));
+                    displayMetrics();
+                } else {
+                    alert(data.error);
+                }
+            } catch (error) {
+                alert('Error fetching metrics');
+            }
+        }
+
+        function displayMetrics() {
+            const accuracy = localStorage.getItem('accuracy');
+            const precision = localStorage.getItem('precision');
+            const recall = localStorage.getItem('recall');
+            const f1_score = localStorage.getItem('f1_score');
+
+            if (accuracy && precision && recall && f1_score) {
+                document.getElementById('accuracy').textContent = accuracy;
+                document.getElementById('precision').textContent = precision;
+                document.getElementById('recall').textContent = recall;
+                document.getElementById('f1_score').textContent = f1_score;
+            }
+        }
+
+        window.onload = function () {
+            displayMetrics();
+        };
         function trainModel() {
             fetch('/train/')
                 .then(response => response.json())
@@ -23,6 +79,131 @@
                 });
         }
     </script>
-</body>
-</html>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 20px;
+        }
 
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .button-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .button-container button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 10px 5px;
+            cursor: pointer;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .button-container button:hover {
+            background-color: #45a049;
+        }
+
+        .metrics-container {
+            width: 50%;
+            margin: 20px auto;
+            border-collapse: collapse;
+        }
+
+        .metrics-container h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .metrics-container table {
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .metrics-container th,
+        .metrics-container td {
+            padding: 12px;
+            text-align: center;
+        }
+
+        .metrics-container thead {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .metrics-container tbody tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        .metrics-container tbody tr:hover {
+            background-color: #ddd;
+        }
+
+        .metrics-container th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .metrics-container td {
+            border-bottom: 1px solid #ddd;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Brain Tumor Detection</h1>
+    <div class="button-container">
+        <button onclick="trainModel()">Train Model</button>
+        <button onclick="fetchMetrics()">Show Model Metrics</button>
+    </div>
+
+    <div id="results"></div>
+
+    <div class="metrics-container">
+        <h1>Model Metrics</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Accuracy</td>
+                    <td id="accuracy">Loading...</td>
+                </tr>
+                <tr>
+                    <td>Precision</td>
+                    <td id="precision">Loading...</td>
+                </tr>
+                <tr>
+                    <td>Recall</td>
+                    <td id="recall">Loading...</td>
+                </tr>
+                <tr>
+                    <td>F1 Score</td>
+                    <td id="f1_score">Loading...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+
+</html>
