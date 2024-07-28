@@ -156,7 +156,7 @@ def predict(request):
             return JsonResponse({"error": str(e)}, status=500)
     return JsonResponse({"error": "Invalid request"}, status=400)
 
-
+@csrf_exempt
 def show_metrics(request):
     try:
         # Load the test dataset
