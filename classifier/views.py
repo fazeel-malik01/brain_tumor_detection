@@ -101,34 +101,37 @@ def train_model(request):
             callbacks=[early_stopping, reduce_lr]
         )
         
-        # Evaluate model
-        y_true = np.argmax(y_test, axis=1)
-        y_pred_probs = model.predict(X_test)
-        y_pred_classes = np.argmax(y_pred_probs, axis=1)
-        
-        accuracy = accuracy_score(y_true, y_pred_classes)
-        cm = confusion_matrix(y_true, y_pred_classes)
-        class_report = classification_report(y_true, y_pred_classes, output_dict=True)
-        
-        evaluation_results = {
-            'Accuracy': accuracy,
-            'Confusion Matrix': cm.tolist(),
-            'Classification Report': class_report
-        }
-        
         # Save the trained model 
         model_save_path = os.path.join('classifier', 'trained_models', 'model.h5')
         os.makedirs(os.path.dirname(model_save_path), exist_ok=True)
         save_model(model, model_save_path)
         
+        # Save the training history
+        history_save_path = os.path.join('classifier', 'trained_models', 'history.npy')
+        np.save(history_save_path, history.history)
+        
+        # Evaluate model
+        y_true = np.argmax(y_test, axis=1)
+        y_pred_probs = model.predict(X_test)
+        y_pred_classes = np.argmax(y_pred_probs, axis=1)
+        
+        # Metrics
+        accuracy = accuracy_score(y_true, y_pred_classes)
+        cm = confusion_matrix(y_true, y_pred_classes)
+        class_report = classification_report(y_true, y_pred_classes, output_dict=True)
+        
         # Return the evaluation results
         return JsonResponse({
             "status": "Training and evaluation complete",
-            "evaluation_results": evaluation_results
+            "evaluation_results": {
+                "accuracy": accuracy,
+                "confusion_matrix": cm.tolist(),
+                "classification_report": class_report
+            }
         })
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
-    
+ 
 model_path = 'classifier/trained_models/model.h5'
 model = load_model(model_path)
 @csrf_exempt
