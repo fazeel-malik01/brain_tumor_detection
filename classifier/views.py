@@ -131,7 +131,70 @@ def train_model(request):
         })
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
- 
+def continue_training(request, additional_epochs=1):
+    try:
+        # Load the saved model
+        model_path = os.path.join('classifier', 'trained_models', 'model.h5')
+        model = load_model(model_path)
+        
+        # Load the training data
+        X_train, X_test, y_train, y_test = load_data()
+        y_train, y_test = preprocess_labels(y_train, y_test)
+        X_train = X_train / 255.0
+        X_test = X_test / 255.0
+        
+        # Data augmentation
+        datagen = create_datagen()
+        
+        # Load the previous history
+        history_save_path = os.path.join('classifier', 'trained_models', 'history.npy')
+        if os.path.exists(history_save_path):
+            previous_history = np.load(history_save_path, allow_pickle=True).item()
+        else:
+            previous_history = {'accuracy': [], 'val_accuracy': [], 'loss': [], 'val_loss': []}
+        
+        # Continue training
+        early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
+        reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=3, min_lr=1e-7)
+        
+        history = model.fit(
+            datagen.flow(X_train, y_train, batch_size=32),
+            steps_per_epoch=len(X_train) // 32,
+            epochs=additional_epochs,
+            validation_data=(X_test, y_test),
+            callbacks=[early_stopping, reduce_lr]
+        )
+        
+        # Update and save the history
+        for key in history.history.keys():
+            previous_history[key].extend(history.history[key])
+        np.save(history_save_path, previous_history)
+        
+        # Save the updated model
+        save_model(model, model_path)
+        
+        # Evaluate model
+        y_true = np.argmax(y_test, axis=1)
+        y_pred_probs = model.predict(X_test)
+        y_pred_classes = np.argmax(y_pred_probs, axis=1)
+        
+        # Metrics
+        accuracy = accuracy_score(y_true, y_pred_classes)
+        cm = confusion_matrix(y_true, y_pred_classes)
+        class_report = classification_report(y_true, y_pred_classes, output_dict=True)
+        
+        # Return the evaluation results
+        return JsonResponse({
+            "status": "Continued training and evaluation complete",
+            "evaluation_results": {
+                "accuracy": accuracy,
+                "confusion_matrix": cm.tolist(),
+                "classification_report": class_report
+            }
+        })
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
 model_path = 'classifier/trained_models/model.h5'
 model = load_model(model_path)
 @csrf_exempt

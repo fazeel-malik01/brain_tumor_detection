@@ -80,6 +80,26 @@
                     document.getElementById('results').innerText = "Error: " + error;
                 });
         }
+        function continueTraining() {
+            fetch('/continue_training/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({ additional_epochs: 5 }) // Example: Continue training for 5 more epochs
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('results').innerText = "Error: " + data.error;
+                    } else {
+                        document.getElementById('results').innerText = data.status;
+                    }
+                }).catch(error => {
+                    document.getElementById('results').innerText = "Error: " + error;
+                });
+        }
     </script>
     <style>
         body {
@@ -172,6 +192,7 @@
     <h1>Brain Tumor Detection</h1>
     <div class="button-container">
         <button onclick="trainModel()">Train Model</button>
+        <button onclick="continueTraining()">Continue Training</button>
         <button onclick="fetchMetrics()">Show Model Metrics</button>
     </div>
 
